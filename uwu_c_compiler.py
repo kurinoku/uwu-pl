@@ -104,7 +104,7 @@ class CCompiler:
 
         f = self.get_call_name(callee.id)
         arg_list = f.format_args(args)
-        self.writeln(f"{f.f_name}({arg_list})")
+        self.writeln(f"{f.f_name}({arg_list});")
     
     def visit_root(self, root: TreeRoot) -> None:
         for child in root.children:
