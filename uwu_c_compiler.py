@@ -29,6 +29,7 @@ class Printf(Func):
         return ', '.join(t)
 
 class CCompiler:
+    EXT = '.c'
 
     def __init__(self, t, o) -> None:
         self.t = t

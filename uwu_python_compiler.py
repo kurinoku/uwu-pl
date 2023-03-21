@@ -3,6 +3,7 @@ from uwu_pass import PLCall, PLDecl, PLStx
 from uwu_parser import TreeRoot, PLNumber, PLIndentifier
 
 class PythonCompiler:
+    EXT = '.py'
 
     def __init__(self, t, o) -> None:
         self.t = t
