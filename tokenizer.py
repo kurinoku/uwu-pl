@@ -132,6 +132,20 @@ class Tokenizer:
                 if c not in '_':
                     t.append(c)
                 c = self.next_char()
+            
+            if c == '.':
+                t.append(c)
+                c = self.next_char()
+
+                if c.isdigit() or c in '_':
+                    while c.isdigit() or c in '_':
+                        if c not in '_':
+                            t.append(c)
+                        c = self.next_char()
+                else:
+                    raise RuntimeError(f"Expected digit or underscore after dot in decimal.")
+
+
             self.rescue_char()
         except StopIteration:
             pass
