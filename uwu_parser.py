@@ -7,19 +7,33 @@ from dataclasses import dataclass
 class TreeRoot:
     children: list
 
+    def visit(self, visitor):
+        return visitor.visit_root(self)
+
 @dataclass
 class TList:
     children: list
+
+    def visit(self, visitor):
+        return visitor.visit_t_list(self)
 
 @dataclass
 class PLIndentifier:
     id: str
     token: Token
+    _who: int = -1
+    _type: int = -1
+
+    def visit(self, visitor):
+        return visitor.visit_identifier(self)
 
 @dataclass
 class PLNumber:
     value: float
     token: Token
+
+    def visit(self, visitor):
+        return visitor.visit_number(self)
 
 class _Skip:
     pass
@@ -80,9 +94,9 @@ class Parser:
 
     def name_eval(self, t: Token) -> Any:
         if t.type == TokenType.NAME:
-            return PLIndentifier(t.value, t)
+            return PLIndentifier(id = t.value, token = t)
         if t.type == TokenType.NUMBER:
-            return PLNumber(t.value, t)
+            return PLNumber(value = t.value, token = t)
         raise RuntimeError(f"Unknown token evaluated in name expression.")
 
     def name_parse(self) -> TList:
