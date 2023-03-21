@@ -15,7 +15,7 @@ class PLCall:
 @dataclass
 class PLDecl:
     type: str
-    variable: Any
+    variable: PLIndentifier
 
     def visit(self, visitor):
         return visitor.visit_decl(self)
@@ -46,6 +46,8 @@ class Pass:
         elif callee.id in self.DECL_IDENTIFIERS:
             if len(args) != 1:
                 raise RuntimeError(f"Declaration: syntax error. Expected just the identifier.")
+            if not isinstance(args[0], PLIndentifier):
+                raise RuntimeError(f"Declaration: syntax error. Expected identifier.")
             return PLDecl(type = self.DECL_IDENTIFIERS[callee.id], variable = args[0])
         elif callee.id in self.STX_IDENTFIERS:
             s = self.STX_IDENTFIERS[callee.id]
