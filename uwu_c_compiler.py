@@ -2,14 +2,70 @@
 from uwu_pass import PLCall, PLDecl, PLStx
 from uwu_parser import TreeRoot, PLNumber, PLIndentifier
 
-class PythonCompiler:
+class Func:
+    pass
+
+class Printf(Func):
+    f_name = 'printf'
+    
+    def __init__(self, compiler):
+        self.compiler = compiler
+    
+    FORMAT_OPT = {
+        'int': '%d'
+    }
+
+    def get_f_string(self, f) -> str:
+        ret = self.FORMAT_OPT.get(f)
+        if ret is None:
+            raise RuntimeError(f"Format option for type {f} not found.")
+        return ret
+
+    def format_args(self, args):
+        types = [self.compiler.get_var_type(x) for x in args]
+        types_f = [self.get_f_string(x) for x in types]
+        t = [x.visit(self.compiler) for x in args]
+        t.insert(0, '"{}"'.format(' '.join(types_f)))
+        return ', '.join(t)
+
+class CCompiler:
 
     def __init__(self, t, o) -> None:
         self.t = t
         self.o = o
+
+        self._var_types = {}
     
+    def set_var_type(self, key, type):
+        self._var_types[key] = type
+    
+    def get_var_type_literal(self, val) -> str:
+        if isinstance(val, int):
+            return 'int'
+        elif isinstance(val, float):
+            return 'float'
+        else:
+            raise RuntimeError(f"Type of literal value. {repr(val)} not known.")
+
+    def get_var_type(self, key):
+        if isinstance(key, PLIndentifier):
+            key = key.id
+        elif isinstance(key, PLNumber):
+            val = key.value
+            key = self.get_var_type_literal(val)
+        elif not isinstance(key, str):
+            raise TypeError(f"Expected a PLIdentifier PLNumber or str. {key}")
+
+        v = self._var_types.get(key)
+        if v is None:
+            raise RuntimeError(f"Unknown var type. {key}")
+        return v
+
     def compile(self) -> None:
+        self.writeln('#include <stdio.h>')
+        self.writeln('int main(int argc, char** argv) {')
         self.t.visit(self)
+        self.writeln('return 0;\n}')
 
     def write(self, s) -> None:
         self.o.write(s)
@@ -25,11 +81,14 @@ class PythonCompiler:
         raise super().__getattribute__(name)
     
     CALL_NAMES = {
-        'UwU': 'print',
+        'UwU': Printf,
     }
 
-    def get_call_name(self, name: str) -> str:
-        return self.CALL_NAMES[name]
+    def get_call_name(self, name: str) -> Func:
+        f = self.CALL_NAMES.get(name)
+        if f is None:
+            raise RuntimeError(f"Callable name not found. {name}")
+        return f(self)
     
     def format_args(self, args: list) -> str:
         t = [x.visit(self) for x in args]
@@ -40,11 +99,11 @@ class PythonCompiler:
         args = call.arguments
 
         if not isinstance(callee, PLIndentifier):
-            raise RuntimeError(f"Python compiler does not support callees that are not built-in.")
+            raise RuntimeError(f"C compiler does not support callees that are not built-in.")
 
-        f_name = self.get_call_name(callee.id)
-        arg_list = self.format_args(args)
-        self.writeln(f"{f_name}({arg_list})")
+        f = self.get_call_name(callee.id)
+        arg_list = f.format_args(args)
+        self.writeln(f"{f.f_name}({arg_list})")
     
     def visit_root(self, root: TreeRoot) -> None:
         for child in root.children:
@@ -74,13 +133,15 @@ class PythonCompiler:
         return v
 
     def visit_decl(self, decl: PLDecl) -> None:
+        _var = decl.variable.id
         var = self.make_name_safe(decl.variable.id)
         _type = decl.type
-        initializer = self.get_decl_initializer(_type)
-        self.writeln(f"{var} = {initializer}")
+        type_name, initializer = self.get_decl_initializer(_type)
+        self.set_var_type(_var, type_name)
+        self.writeln(f"{type_name} {var} = {initializer};")
 
     DECL_INITIALIZER = {
-        'INT': '0'
+        'INT': ('int', '0')
     }
 
     def visit_stx(self, stx: PLStx) -> None:
@@ -94,7 +155,7 @@ class PythonCompiler:
                 raise RuntimeError(f"Expected identifier as first parameter in SUM syntax.")
             val = val.visit(self)
             var = self.make_name_safe(iden.id)
-            self.writeln(f"{var} += {val}")
+            self.writeln(f"{var} += {val};")
             return
         
         raise RuntimeError(f"Unknown syntax name. {name}")
