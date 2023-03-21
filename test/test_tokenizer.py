@@ -17,10 +17,10 @@ UwU @_@
 """
 
 tkn = Tokenizer.from_string(script)
-#for t in tkn:
-#    print(t)
-for i in range(50):
-    print(tkn.next())
+for t in tkn:
+    print(t)
+#for i in range(50):
+#    print(tkn.next())
 
 #for i, t in enumerate(tkn):
 #    if i > 15:

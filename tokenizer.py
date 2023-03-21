@@ -174,6 +174,7 @@ class Tokenizer:
         t = self.next()
         while t.type != TokenType.EOF:
             yield t
+            t = self.next()
         yield t
     
     def __iter__(self):
