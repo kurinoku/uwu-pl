@@ -60,7 +60,7 @@ class Tokenizer:
         if start_position is not None:
             line = start_position.line
             col = start_position.col
-            span = char - start_position.n
+            span = char - start_position.n - 1
             char = start_position.n
         
         t = Token(
@@ -124,6 +124,21 @@ class Tokenizer:
         s = ''.join(t)
         return self.make_token(TokenType.NAME, s, original_position)
 
+    def number(self, c: str, original_position: SourcePosition) -> Token:
+        try:
+            t = [c]
+            c = self.next_char()
+            while c.isdigit() or c in '_':
+                if c not in '_':
+                    t.append(c)
+                c = self.next_char()
+            self.rescue_char()
+        except StopIteration:
+            pass
+
+        s = ''.join(t)
+        return self.make_token(TokenType.NUMBER, float(s), original_position)
+
     def next(self) -> Token:
         try:
             while True:
@@ -134,6 +149,8 @@ class Tokenizer:
                     return self.name(c, self._current_char_position)
                 elif c in '\t ':
                     continue
+                elif c.isdigit():
+                    return self.number(c, self._current_char_position)
                 else:
                     raise RuntimeError(f"Unknown token. {self._line} {self._col}, {self._char} {repr(c)}")
         except StopIteration:
