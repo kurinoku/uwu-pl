@@ -169,6 +169,9 @@ class Tokenizer:
                     raise RuntimeError(f"Unknown token. {self._line} {self._col}, {self._char} {repr(c)}")
         except StopIteration:
             return self.eof_token()
+    
+    def get_last_token(self) -> Token:
+        return self._last_token
 
     def generator(self):
         t = self.next()
