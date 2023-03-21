@@ -4,6 +4,8 @@ from typing import Optional, Any
 from dataclasses import dataclass
 from enum import Enum, auto
 
+from uwu_exception import UWUTokenizerError
+
 class TokenType(Enum):
     NL = auto()
     NAME = auto()
@@ -33,6 +35,9 @@ KEYWORDS = {
 }
 
 class Tokenizer:
+    source: Iterable[str]
+    source_name: Optional[str]
+    source_path: Optional[str]
     _line: int
     _col: int
     _char: int
@@ -51,6 +56,9 @@ class Tokenizer:
         self._last_char = ''
         self._rescue_last_char = False
         self._last_token = None
+
+    def make_error(self, msg: str) -> UWUTokenizerError:
+        return UWUTokenizerError(msg)
 
     def make_token(self, type: TokenType, value: Any = None, start_position: Optional[SourcePosition] = None) -> Token:
         line = self._line
@@ -143,7 +151,7 @@ class Tokenizer:
                             t.append(c)
                         c = self.next_char()
                 else:
-                    raise RuntimeError(f"Expected digit or underscore after dot in decimal.")
+                    raise self.make_error(f"Expected digit or underscore after dot in decimal.")
 
 
             self.rescue_char()
@@ -166,7 +174,7 @@ class Tokenizer:
                 elif c.isdigit():
                     return self.number(c, self._current_char_position)
                 else:
-                    raise RuntimeError(f"Unknown token. {self._line} {self._col}, {self._char} {repr(c)}")
+                    raise self.make_error(f"Unknown token. {repr(c)}")
         except StopIteration:
             return self.eof_token()
     
